@@ -9,13 +9,20 @@
     ],
     "module": "ESNext",
     "skipLibCheck": true,
+    "jsx": "react-jsx",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "strict": true,
+    "types": ["vite/client"]
   },
-  "include": [
-    "src"
+  "include": ["../src"],
+  "exclude": [
+    "**/*.test.*",
+    "tests",
+    "vitest.config.*",
+    "vitest.setup.*",
+    "node_modules"
   ]
 }
