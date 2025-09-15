@@ -36,7 +36,8 @@ const GOALS = [
 
 const MUSCLES = ["Peito","Costas","Ombros","Biceps","Triceps","Quadriceps","Posterior","Gluteos","Panturrilhas","Core"] as const;
 
-// 10+ avatares (busto 3D/cartoon via Dicebear Avataaars)
+// Avatar fixo do Benfit e 10 avatares para usuários
+const BENFIT_AVATAR_URL = "https://images.unsplash.com/photo-1556157382-97eda2dfd30b?q=80&w=800&auto=format&fit=crop";
 const AVATARS: { id: string; url: string; label: string }[] = [
   { id: "a1", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Nova&top=ShortHairShortFlat&facialHairProbability=0&clothes=ShirtCrewNeck&clothesColor=Blue03", label: "F1" },
   { id: "a2", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rafa&top=ShortHairDreads01&facialHairProbability=0&clothes=Hoodie&clothesColor=Gray02", label: "F2" },
@@ -48,7 +49,6 @@ const AVATARS: { id: string; url: string; label: string }[] = [
   { id: "a8", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana&top=LongHairStraight2&facialHairProbability=0&clothes=BlazerShirt&clothesColor=PastelBlue", label: "F5" },
   { id: "a9", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Joao&top=ShortHairSides&facialHair=BeardLight&clothes=ShirtCrewNeck&clothesColor=Gray02", label: "M4" },
   { id: "a10", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bianca&top=LongHairBun&facialHairProbability=0&clothes=ShirtScoopNeck&clothesColor=Pink", label: "F6" },
-  { id: "a11", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kai&top=ShortHairShortCurly&facialHairProbability=0&clothes=Hoodie&clothesColor=Green", label: "N1" },
 ];
 
 // Exercícios base (somente equipamentos/pesos nas imagens)
@@ -257,7 +257,7 @@ function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId,
         <Card title="Seu treinador: Benfit">
           <div style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:12,alignItems:"center"}}>
             <div style={{width:100,height:100,border:"1px solid #e5e7eb",borderRadius:12,background:"#f8fafc",display:'grid',placeItems:'center',overflow:'hidden'}}>
-              <img src={AVATARS.find(a=>a.id===avatarId)?.url} alt="Avatar Benfit" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              <img src={BENFIT_AVATAR_URL} alt="Avatar Benfit" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
             </div>
             <div style={{fontSize:14,color:"#334155"}}>
               Ola! Eu sou o <b>Benfit</b>. Vamos montar um plano simples e eficiente para este mes. Escolha seu avatar favorito abaixo.
