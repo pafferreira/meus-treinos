@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
@@ -11,17 +10,3 @@ export default defineConfig({
     include: ['tests/**/*.test.ts?(x)', 'src/**/*.test.ts?(x)']
   }
 })
-=======
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['tests/**/*.test.ts?(x)', 'src/**/*.test.ts?(x)']
-  }
-})
->>>>>>> origin/main

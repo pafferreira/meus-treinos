@@ -1,4 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  isSupabaseConfigured,
+  loadRemoteUserState,
+  saveRemoteUserState,
+  type RemoteUserSnapshot,
+} from "./supabaseClient";
 
 /**
  * Meus Treinos – App refatorado (estilo SmartFit simplificado)
@@ -37,37 +43,38 @@ const GOALS = [
 const MUSCLES = ["Peito","Costas","Ombros","Biceps","Triceps","Quadriceps","Posterior","Gluteos","Panturrilhas","Core"] as const;
 
 // Avatar fixo do Benfit e 10 avatares para usuários
-const BENFIT_AVATAR_URL = "https://images.unsplash.com/photo-1556157382-97eda2dfd30b?q=80&w=800&auto=format&fit=crop";
+const BENFIT_AVATAR_URL = "https://images.unsplash.com/photo-1556157382-97eda2dfd30b?q=80&w=512&auto=format&fit=crop";
 const AVATARS: { id: string; url: string; label: string }[] = [
-  { id: "a1", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Nova&top=ShortHairShortFlat&facialHairProbability=0&clothes=ShirtCrewNeck&clothesColor=Blue03", label: "F1" },
-  { id: "a2", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rafa&top=ShortHairDreads01&facialHairProbability=0&clothes=Hoodie&clothesColor=Gray02", label: "F2" },
-  { id: "a3", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mika&top=LongHairStraight&facialHairProbability=0&clothes=BlazerShirt&clothesColor=Black", label: "F3" },
-  { id: "a4", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Gui&top=ShortHairFrizzle&facialHair=BeardLight&facialHairColor=BrownDark&clothes=ShirtVNeck&clothesColor=Blue01", label: "M1" },
-  { id: "a5", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&top=ShortHairTheCaesar&facialHair=BeardMedium&clothes=ShirtScoopNeck&clothesColor=PastelOrange", label: "M2" },
-  { id: "a6", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lia&top=LongHairCurvy&facialHairProbability=0&clothes=ShirtCrewNeck&clothesColor=Red", label: "F4" },
-  { id: "a7", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tom&top=ShortHairShortRound&facialHair=BeardMajestic&clothes=Hoodie&clothesColor=Blue02", label: "M3" },
-  { id: "a8", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana&top=LongHairStraight2&facialHairProbability=0&clothes=BlazerShirt&clothesColor=PastelBlue", label: "F5" },
-  { id: "a9", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Joao&top=ShortHairSides&facialHair=BeardLight&clothes=ShirtCrewNeck&clothesColor=Gray02", label: "M4" },
-  { id: "a10", url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bianca&top=LongHairBun&facialHairProbability=0&clothes=ShirtScoopNeck&clothesColor=Pink", label: "F6" },
+  { id: "a1", url: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=400&auto=format&fit=crop", label: "Luna" },
+  { id: "a2", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop", label: "Joca" },
+  { id: "a3", url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop", label: "Bento" },
+  { id: "a4", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop", label: "Mel" },
+  { id: "a5", url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400&auto=format&fit=crop", label: "Zig" },
+  { id: "a6", url: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=400&auto=format&fit=crop", label: "Dona" },
+  { id: "a7", url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop", label: "Kiko" },
+  { id: "a8", url: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?q=80&w=400&auto=format&fit=crop", label: "Pipoca" },
+  { id: "a9", url: "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=400&auto=format&fit=crop", label: "Bia" },
+  { id: "a10", url: "https://images.unsplash.com/photo-1546967191-fdfb13ed6b1e?q=80&w=400&auto=format&fit=crop", label: "Gui" },
+  { id: "a11", url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop", label: "Tuca" },
 ];
 
 // Exercícios base (somente equipamentos/pesos nas imagens)
 export type Exercise = { id: string; name: string; primaryMuscles: string[]; machineImg?: string; freeAltName?: string; freeAltImg?: string; tips?: string };
 const LIB: Exercise[] = [
-  { id: uid(), name: "Supino reto", primaryMuscles: ["Peito","Triceps"], machineImg: "https://images.unsplash.com/photo-1582610116397-edb318620f13?q=80&w=800&auto=format&fit=crop", freeAltName: "Supino com halteres", freeAltImg: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?q=80&w=800&auto=format&fit=crop", tips: "Escapulas retraidas, controle na descida." },
-  { id: uid(), name: "Crucifixo no cabo", primaryMuscles: ["Peito"], machineImg: "https://images.unsplash.com/photo-1571907480495-6acb709b7510?q=80&w=800&auto=format&fit=crop", freeAltName: "Crucifixo com halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Amplitude confortavel, sem forcar ombro." },
-  { id: uid(), name: "Remada sentada", primaryMuscles: ["Costas","Biceps"], machineImg: "https://images.unsplash.com/photo-1599050751793-8a8eeb8e5e88?q=80&w=800&auto=format&fit=crop", freeAltName: "Remada curvada com barra", freeAltImg: "https://images.unsplash.com/photo-1540497077202-7c8a61c74324?q=80&w=800&auto=format&fit=crop", tips: "Puxe com dorsais, tronco estavel." },
-  { id: uid(), name: "Puxada na barra", primaryMuscles: ["Costas","Biceps"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", freeAltName: "Barra fixa assistida", freeAltImg: "https://images.unsplash.com/photo-1591216174990-7b7f7f2f7a67?q=80&w=800&auto=format&fit=crop", tips: "Desce escapulas antes de puxar." },
-  { id: uid(), name: "Desenvolvimento ombros", primaryMuscles: ["Ombros","Triceps"], machineImg: "https://images.unsplash.com/photo-1591348278863-c5b8b7f52c16?q=80&w=800&auto=format&fit=crop", freeAltName: "Desenv. com halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Punhos neutros; sem hiperextensao lombar." },
-  { id: uid(), name: "Elevacao lateral", primaryMuscles: ["Ombros"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", freeAltName: "Elevacao lateral halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Cotovelo levemente flexionado." },
-  { id: uid(), name: "Agachamento guiado", primaryMuscles: ["Quadriceps","Posterior","Gluteos"], machineImg: "https://images.unsplash.com/photo-1572147243989-5be19699034b?q=80&w=800&auto=format&fit=crop", freeAltName: "Agachamento com barra", freeAltImg: "https://images.unsplash.com/photo-1554344728-77cf90d9ed26?q=80&w=800&auto=format&fit=crop", tips: "Core ativo; amplitude segura." },
-  { id: uid(), name: "Leg press", primaryMuscles: ["Quadriceps","Posterior","Gluteos"], machineImg: "https://images.unsplash.com/photo-1571019613914-85f342c55f87?q=80&w=800&auto=format&fit=crop", tips: "Pes firmes, joelhos alinhados." },
-  { id: uid(), name: "Mesa flexora", primaryMuscles: ["Posterior"], machineImg: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800&auto=format&fit=crop", tips: "Controle excentrico." },
-  { id: uid(), name: "Extensora", primaryMuscles: ["Quadriceps"], machineImg: "https://images.unsplash.com/photo-1571019613454-1cb2f1bb3e08?q=80&w=800&auto=format&fit=crop", tips: "Nao travar joelhos." },
-  { id: uid(), name: "Panturrilha em pe", primaryMuscles: ["Panturrilhas"], machineImg: "https://images.unsplash.com/photo-1517963628607-235ccdd5476c?q=80&w=800&auto=format&fit=crop", freeAltName: "Halteres panturrilha", freeAltImg: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?q=80&w=800&auto=format&fit=crop", tips: "Pico de contraçao." },
-  { id: uid(), name: "Rosca direta", primaryMuscles: ["Biceps"], freeAltImg: "https://images.unsplash.com/photo-1540497077202-7c8a61c74324?q=80&w=800&auto=format&fit=crop", tips: "Ombros quietos, so cotovelo." },
-  { id: uid(), name: "Triceps corda", primaryMuscles: ["Triceps"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", tips: "Estender sem projetar ombro." },
-  { id: uid(), name: "Prancha", primaryMuscles: ["Core"], machineImg: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800&auto=format&fit=crop", tips: "Alinhar cabeca-coluna-pelve." },
+  { id: "supino_reto", name: "Supino reto", primaryMuscles: ["Peito","Triceps"], machineImg: "https://images.unsplash.com/photo-1582610116397-edb318620f13?q=80&w=800&auto=format&fit=crop", freeAltName: "Supino com halteres", freeAltImg: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?q=80&w=800&auto=format&fit=crop", tips: "Escapulas retraidas, controle na descida." },
+  { id: "crucifixo_cabo", name: "Crucifixo no cabo", primaryMuscles: ["Peito"], machineImg: "https://images.unsplash.com/photo-1571907480495-6acb709b7510?q=80&w=800&auto=format&fit=crop", freeAltName: "Crucifixo com halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Amplitude confortavel, sem forcar ombro." },
+  { id: "remada_sentada", name: "Remada sentada", primaryMuscles: ["Costas","Biceps"], machineImg: "https://images.unsplash.com/photo-1599050751793-8a8eeb8e5e88?q=80&w=800&auto=format&fit=crop", freeAltName: "Remada curvada com barra", freeAltImg: "https://images.unsplash.com/photo-1540497077202-7c8a61c74324?q=80&w=800&auto=format&fit=crop", tips: "Puxe com dorsais, tronco estavel." },
+  { id: "puxada_barra", name: "Puxada na barra", primaryMuscles: ["Costas","Biceps"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", freeAltName: "Barra fixa assistida", freeAltImg: "https://images.unsplash.com/photo-1591216174990-7b7f7f2f7a67?q=80&w=800&auto=format&fit=crop", tips: "Desce escapulas antes de puxar." },
+  { id: "desenvolvimento_ombros", name: "Desenvolvimento ombros", primaryMuscles: ["Ombros","Triceps"], machineImg: "https://images.unsplash.com/photo-1591348278863-c5b8b7f52c16?q=80&w=800&auto=format&fit=crop", freeAltName: "Desenv. com halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Punhos neutros; sem hiperextensao lombar." },
+  { id: "elevacao_lateral", name: "Elevacao lateral", primaryMuscles: ["Ombros"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", freeAltName: "Elevacao lateral halteres", freeAltImg: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?q=80&w=800&auto=format&fit=crop", tips: "Cotovelo levemente flexionado." },
+  { id: "agachamento_guiado", name: "Agachamento guiado", primaryMuscles: ["Quadriceps","Posterior","Gluteos"], machineImg: "https://images.unsplash.com/photo-1572147243989-5be19699034b?q=80&w=800&auto=format&fit=crop", freeAltName: "Agachamento com barra", freeAltImg: "https://images.unsplash.com/photo-1554344728-77cf90d9ed26?q=80&w=800&auto=format&fit=crop", tips: "Core ativo; amplitude segura." },
+  { id: "leg_press", name: "Leg press", primaryMuscles: ["Quadriceps","Posterior","Gluteos"], machineImg: "https://images.unsplash.com/photo-1571019613914-85f342c55f87?q=80&w=800&auto=format&fit=crop", tips: "Pes firmes, joelhos alinhados." },
+  { id: "mesa_flexora", name: "Mesa flexora", primaryMuscles: ["Posterior"], machineImg: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800&auto=format&fit=crop", tips: "Controle excentrico." },
+  { id: "extensora", name: "Extensora", primaryMuscles: ["Quadriceps"], machineImg: "https://images.unsplash.com/photo-1571019613454-1cb2f1bb3e08?q=80&w=800&auto=format&fit=crop", tips: "Nao travar joelhos." },
+  { id: "panturrilha_em_pe", name: "Panturrilha em pe", primaryMuscles: ["Panturrilhas"], machineImg: "https://images.unsplash.com/photo-1517963628607-235ccdd5476c?q=80&w=800&auto=format&fit=crop", freeAltName: "Halteres panturrilha", freeAltImg: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?q=80&w=800&auto=format&fit=crop", tips: "Pico de contraçao." },
+  { id: "rosca_direta", name: "Rosca direta", primaryMuscles: ["Biceps"], freeAltImg: "https://images.unsplash.com/photo-1540497077202-7c8a61c74324?q=80&w=800&auto=format&fit=crop", tips: "Ombros quietos, so cotovelo." },
+  { id: "triceps_corda", name: "Triceps corda", primaryMuscles: ["Triceps"], machineImg: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=800&auto=format&fit=crop", tips: "Estender sem projetar ombro." },
+  { id: "prancha", name: "Prancha", primaryMuscles: ["Core"], machineImg: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800&auto=format&fit=crop", tips: "Alinhar cabeca-coluna-pelve." },
 ];
 
 // Plan/sessions types
@@ -102,8 +109,12 @@ function buildPlan(goal: GoalId, groups: string[], frequency: number, lib: Exerc
 // ------------------------------ UI Primitives -----------------------------
 function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary"|"secondary"|"ghost" }){
   const {variant="primary", style, ...rest} = props;
-  const base: React.CSSProperties = { borderRadius: 8, padding: "10px 12px", fontSize: 14, cursor: "pointer", border: "1px solid transparent" };
-  const variants: Record<string, React.CSSProperties> = { primary:{background:"#0f172a",color:"#fff"}, secondary:{background:"#fff",color:"#0f172a",borderColor:"#e5e7eb"}, ghost:{background:"transparent",color:"#0f172a"} };
+  const base: React.CSSProperties = { borderRadius: 8, padding: "10px 12px", fontSize: 14, cursor: "pointer", borderWidth: 1, borderStyle: "solid", borderColor: "transparent", background: "#0f172a", color: "#fff" };
+  const variants: Record<string, React.CSSProperties> = {
+    primary:{ background:"#0f172a", color:"#fff" },
+    secondary:{ background:"#fff", color:"#0f172a", borderColor:"#e5e7eb" },
+    ghost:{ background:"transparent", color:"#0f172a", borderColor:"transparent" }
+  };
   return <button {...rest} style={{...base,...variants[variant],...style}}/>;
 }
 function Card({title, children}:{title?:string;children:React.ReactNode}){ return (
@@ -147,6 +158,10 @@ export default function App(){
   const [points, setPoints] = useState<number>(readLS(DB.POINTS(userId), 0));
   const ym = YM();
   const [progress, setProgress] = useState<{target:number;done:number}>(readLS(DB.SESSIONS_PROGRESS(userId, ym), {target:30, done:0}));
+  const supabaseAvailable = isSupabaseConfigured;
+  const [remoteStatus, setRemoteStatus] = useState<'disabled'|'loading'|'ready'|'error'>(supabaseAvailable ? 'loading' : 'disabled');
+  const remoteProgressRef = useRef<Record<string, {target:number;done:number}>>({});
+  const lastSupabasePayload = useRef<string>("");
 
   // persist / reload on user change
   useEffect(()=>writeLS(DB.USERS, users), [users]);
@@ -160,6 +175,72 @@ export default function App(){
     setPoints(readLS(DB.POINTS(userId), 0));
     setProgress(readLS(DB.SESSIONS_PROGRESS(userId, ym), {target:30, done:0}));
   },[userId]);
+  useEffect(()=>{
+    if(!supabaseAvailable){
+      setRemoteStatus('disabled');
+      return;
+    }
+    let cancelled = false;
+    setRemoteStatus('loading');
+    remoteProgressRef.current = {};
+    lastSupabasePayload.current = "";
+    (async ()=>{
+      const { snapshot, error } = await loadRemoteUserState(userId);
+      if(cancelled) return;
+      if(error){
+        setRemoteStatus('error');
+        return;
+      }
+      if(snapshot){
+        if(snapshot.avatarId){ setAvatarId(snapshot.avatarId); }
+        if(snapshot.plan){ setPlan(snapshot.plan); }
+        if(typeof snapshot.points === 'number'){ setPoints(snapshot.points); }
+        if(snapshot.progressByMonth){
+          remoteProgressRef.current = snapshot.progressByMonth;
+          const remoteProgress = snapshot.progressByMonth[ym];
+          if(remoteProgress){ setProgress(remoteProgress); }
+        }
+      }
+      setRemoteStatus('ready');
+    })();
+    return ()=>{ cancelled = true; };
+  },[supabaseAvailable, userId, ym]);
+  useEffect(()=>{
+    if(!supabaseAvailable || remoteStatus!=='ready') return;
+    const mergedProgress = { ...remoteProgressRef.current, [ym]: progress };
+    remoteProgressRef.current = mergedProgress;
+    const snapshot: RemoteUserSnapshot = {
+      avatarId,
+      plan: plan ?? undefined,
+      points,
+      progressByMonth: mergedProgress,
+    };
+    const serialized = JSON.stringify(snapshot);
+    if(serialized === lastSupabasePayload.current) return;
+    lastSupabasePayload.current = serialized;
+    let cancelled = false;
+    (async ()=>{
+      const ok = await saveRemoteUserState(userId, snapshot);
+      if(!ok && !cancelled){
+        lastSupabasePayload.current = "";
+      }
+    })();
+    return ()=>{ cancelled = true; };
+  },[avatarId, plan, points, progress, remoteStatus, supabaseAvailable, userId, ym]);
+
+  const supabaseStatusLabel = useMemo(()=>{
+    if(!supabaseAvailable) return 'desativado';
+    switch(remoteStatus){
+      case 'loading':
+        return 'conectando';
+      case 'ready':
+        return 'online';
+      case 'error':
+        return 'erro';
+      default:
+        return 'desativado';
+    }
+  },[remoteStatus, supabaseAvailable]);
 
   return (
     <div style={{minHeight:"100vh",background:"#fff",color:"#0f172a"}}>
@@ -187,6 +268,7 @@ export default function App(){
             progress={progress}
             setProgress={setProgress}
             points={points}
+            supabaseStatus={supabaseStatusLabel}
             onGotoCreate={()=>setRoute('create')}
             onGotoMy={()=>setRoute('my')}
           />
@@ -202,6 +284,7 @@ export default function App(){
           <MyScreen
             userId={userId}
             catalog={catalog}
+            plan={plan}
             onPlanChanged={(np)=>{ setPlan(np); }}
             onFinishSession={()=>{
               setProgress(prev=> ({...prev, done: Math.min(prev.done+1, prev.target)}));
@@ -217,7 +300,7 @@ export default function App(){
 }
 
 // ------------------------------- Home Screen ------------------------------
-function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId, plan, progress, setProgress, points, onGotoCreate, onGotoMy }:{ users:{id:string;name:string}[]; setUsers:React.Dispatch<React.SetStateAction<{id:string;name:string}[]>>; userId:string; setUserId:(id:string)=>void; avatarId:string; setAvatarId:(id:string)=>void; plan?:UserPlan; progress:{target:number;done:number}; setProgress:React.Dispatch<React.SetStateAction<{target:number;done:number}>>; points:number; onGotoCreate:()=>void; onGotoMy:()=>void }){
+function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId, plan, progress, setProgress, points, supabaseStatus, onGotoCreate, onGotoMy }:{ users:{id:string;name:string}[]; setUsers:React.Dispatch<React.SetStateAction<{id:string;name:string}[]>>; userId:string; setUserId:(id:string)=>void; avatarId:string; setAvatarId:(id:string)=>void; plan?:UserPlan; progress:{target:number;done:number}; setProgress:React.Dispatch<React.SetStateAction<{target:number;done:number}>>; points:number; supabaseStatus:string; onGotoCreate:()=>void; onGotoMy:()=>void }){
   const user = users.find(u=>u.id===userId)!;
   const groupsCount = useMemo(()=>{
     if(!plan) return {} as Record<string, number>;
@@ -226,15 +309,21 @@ function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId,
     return cnt;
   },[plan]);
   const donePad = String(progress.done).padStart(2,'0'); const targetPad = String(progress.target).padStart(2,'0');
+  const userAvatar = AVATARS.find(a=>a.id===avatarId) ?? AVATARS[0];
 
   return (
     <div style={{display:"grid",gap:16}}>
       <Card title="Usuario">
         <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-          <select value={userId} onChange={(e)=>setUserId(e.target.value)} style={{border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 10px"}}>
-            {users.map(u=> <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-          <AddUser onCreate={(name)=>{ const id = uid(); setUsers([...users,{id,name: name||'Usuario'}]); setUserId(id); }}/>
+          <div style={{width:72,height:72,border:"1px solid #e5e7eb",borderRadius:12,overflow:'hidden',background:'#f8fafc',display:'grid',placeItems:'center'}}>
+            <img src={userAvatar.url} alt={`Avatar selecionado (${userAvatar.label})`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+            <select value={userId} onChange={(e)=>setUserId(e.target.value)} style={{border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 10px"}}>
+              {users.map(u=> <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+            <AddUser onCreate={(name)=>{ const id = uid(); setUsers([...users,{id,name: name||'Usuario'}]); setUserId(id); }}/>
+          </div>
           <div style={{marginLeft:"auto",fontSize:14}}>Sessoes no mes: <b>{donePad}/{targetPad}</b></div>
         </div>
         <div style={{marginTop:10,display:'flex',gap:8,alignItems:'center'}}>
@@ -246,7 +335,7 @@ function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId,
         </div>
       </Card>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:16}}>
         <Card title="Dashboard por grupo">
           {!plan? <div style={{color:'#64748b',fontSize:14}}>Crie um novo treino para ver o resumo por grupo.</div> : (
             <ul style={{display:'grid',gap:6,margin:0,padding:0,listStyle:'none'}}>
@@ -260,15 +349,8 @@ function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId,
               <img src={BENFIT_AVATAR_URL} alt="Avatar Benfit" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
             </div>
             <div style={{fontSize:14,color:"#334155"}}>
-              Ola! Eu sou o <b>Benfit</b>. Vamos montar um plano simples e eficiente para este mes. Escolha seu avatar favorito abaixo.
+              Ola! Eu sou o <b>Benfit</b>. Este e o meu visual oficial e eu estarei com voce em cada sessao. Continue escolhendo o avatar que mais combina com voce ao lado.
             </div>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(64px,1fr))',gap:8,marginTop:12}}>
-            {AVATARS.map(a=> (
-              <button key={a.id} onClick={()=>setAvatarId(a.id)} style={{border:a.id===avatarId? '2px solid #0ea5e9':'1px solid #e5e7eb',borderRadius:12,overflow:'hidden',background:'#fff',cursor:'pointer',padding:0}}>
-                <img src={a.url} alt={a.label} style={{width:'100%',height:64,objectFit:'cover'}}/>
-              </button>
-            ))}
           </div>
           <div style={{marginTop:12,display:'flex',gap:8,flexWrap:'wrap'}}>
             <Button onClick={onGotoCreate} variant="primary">Criar Novo Treino</Button>
@@ -276,9 +358,32 @@ function HomeScreen({ users, setUsers, userId, setUserId, avatarId, setAvatarId,
           </div>
           <div style={{marginTop:12,fontSize:12,color:"#64748b"}}>Pontos acumulados: <b>{points}</b> — complete sessoes para ganhar trofeus!</div>
         </Card>
+        <Card title="Seu avatar">
+          <div style={{display:'grid',gap:12}}>
+            <div style={{display:'flex',gap:12,alignItems:'center'}}>
+              <div style={{width:88,height:88,border:"1px solid #e5e7eb",borderRadius:16,overflow:'hidden',background:'#f8fafc',display:'grid',placeItems:'center'}}>
+                <img src={userAvatar.url} alt={`Avatar selecionado (${userAvatar.label})`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              </div>
+              <p style={{margin:0,fontSize:14,color:'#334155'}}>Escolha dentre diversos visuais para representar voce no aplicativo. Clique em um avatar para atualiza-lo imediatamente.</p>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(64px,1fr))',gap:8}}>
+              {AVATARS.map(a=> (
+                <button
+                  key={a.id}
+                  onClick={()=>setAvatarId(a.id)}
+                  style={{border:a.id===avatarId? '2px solid #0ea5e9':'1px solid #e5e7eb',borderRadius:12,overflow:'hidden',background:'#fff',cursor:'pointer',padding:0}}
+                  aria-pressed={a.id===avatarId}
+                  aria-label={`Selecionar avatar ${a.label}`}
+                >
+                  <img src={a.url} alt={a.label} style={{width:'100%',height:64,objectFit:'cover'}}/>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Card>
       </div>
 
-      <DiagnosticsPanel />
+      <DiagnosticsPanel supabaseStatus={supabaseStatus} />
     </div>
   );
 }
@@ -357,35 +462,56 @@ function CreateScreen({ userId, catalog, onSavePlan }:{ userId:string; catalog:E
 }
 
 // ------------------------------ My Plan Screen ---------------------------
-function MyScreen({ userId, catalog, onPlanChanged, onFinishSession }:{ userId:string; catalog:Exercise[]; onPlanChanged:(p:UserPlan|undefined)=>void; onFinishSession:()=>void }){
-  const [plan, setPlan] = useState<UserPlan|undefined>(readLS(DB.PLAN(userId), undefined));
-  useEffect(()=>{ setPlan(readLS(DB.PLAN(userId), undefined)); },[userId]);
-
+function MyScreen({ userId, catalog, plan, onPlanChanged, onFinishSession }:{ userId:string; catalog:Exercise[]; plan?:UserPlan; onPlanChanged:(p:UserPlan|undefined)=>void; onFinishSession:()=>void }){
   const [selected, setSelected] = useState<string|undefined>(plan?.sessions[0]?.id);
-  useEffect(()=>{ if(plan?.sessions?.[0] && !selected) setSelected(plan.sessions[0].id); },[plan]);
+  useEffect(()=>{
+    if(!plan || plan.sessions.length===0){
+      setSelected(undefined);
+      return;
+    }
+    if(!selected || !plan.sessions.some(s=>s.id===selected)){
+      setSelected(plan.sessions[0].id);
+    }
+  },[plan, selected]);
 
   const ymd = YMD();
   if(!plan) return <Card title="Meu treino"><div style={{color:'#64748b'}}>Voce ainda nao criou um plano. Va em "Criar novo treino".</div></Card>;
 
   const session = plan.sessions.find(s=>s.id===selected) || plan.sessions[0];
-  const doneKey = DB.DONE(userId, session.id, ymd);
-  const [doneMap, setDoneMap] = useState<Record<number, boolean>>(readLS(doneKey, {}));
-  useEffect(()=>{ writeLS(doneKey, doneMap); },[doneMap, doneKey]);
+  const doneKey = session ? DB.DONE(userId, session.id, ymd) : null;
+  const [doneMap, setDoneMap] = useState<Record<number, boolean>>({});
+  useEffect(()=>{
+    if(!doneKey){
+      setDoneMap({});
+      return;
+    }
+    setDoneMap(readLS(doneKey, {}));
+  },[doneKey]);
+  useEffect(()=>{
+    if(doneKey){ writeLS(doneKey, doneMap); }
+  },[doneKey, doneMap]);
 
   function toggle(idx:number){ setDoneMap(prev=> ({...prev, [idx]: !prev[idx]})); }
 
   // Trocar exercicio
   const [replaceIdx, setReplaceIdx] = useState<number | null>(null);
   const replacementPool = (idx:number) => {
-    const cur = session.items[idx]; const ex = catalog.find(e=>e.id===cur.exerciseId)!;
+    if(!session) return [] as Exercise[];
+    const cur = session.items[idx];
+    if(!cur) return [] as Exercise[];
+    const ex = catalog.find(e=>e.id===cur.exerciseId);
+    if(!ex) return [] as Exercise[];
     return catalog.filter(e => e.id!==ex.id && e.primaryMuscles.some(m => ex.primaryMuscles.includes(m)));
   };
   function applyReplacement(idx:number, newId:string){
+    if(!plan || !session) return;
     const np: UserPlan = { ...plan, sessions: plan.sessions.map(s => s.id===session.id ? { ...s, items: s.items.map((it,i)=> i===idx? { ...it, exerciseId: newId }: it) } : s) } as UserPlan;
-    setPlan(np); writeLS(DB.PLAN(userId), np); onPlanChanged(np); setReplaceIdx(null);
+    writeLS(DB.PLAN(userId), np);
+    onPlanChanged(np);
+    setReplaceIdx(null);
   }
 
-  const allDone = session.items.every((_,i)=> !!doneMap[i]);
+  const allDone = session? session.items.every((_,i)=> !!doneMap[i]) : false;
 
   return (
     <div style={{display:'grid',gap:16}}>
@@ -397,7 +523,13 @@ function MyScreen({ userId, catalog, onPlanChanged, onFinishSession }:{ userId:s
 
       <Card title={`Exercicios – ${session.name}`}>
         <ul style={{margin:0,padding:0,listStyle:'none',display:'grid',gap:8}}>
-          {session.items.map((it,idx)=>{ const ex = catalog.find(e=>e.id===it.exerciseId)!; const done = !!doneMap[idx]; const restSec = /^(\d+)-(\d+)s$/.test(it.rest)? parseInt((it.rest.match(/^(\d+)-(\d+)s$/) as RegExpMatchArray)[1]): 60; const pool = replacementPool(idx); return (
+          {session.items.map((it,idx)=>{
+            const ex = catalog.find(e=>e.id===it.exerciseId) ?? { id:'missing', name:'Exercicio indisponivel', primaryMuscles:[], tips:'Este exercicio nao esta mais disponivel. Gere um novo plano.' };
+            const done = !!doneMap[idx];
+            const restSec = /^(\d+)-(\d+)s$/.test(it.rest)? parseInt((it.rest.match(/^(\d+)-(\d+)s$/) as RegExpMatchArray)[1]): 60;
+            const pool = replacementPool(idx);
+            const tips = ex.tips || (ex.id==='missing'? 'Este exercicio nao esta mais disponivel. Gere um novo plano.': undefined);
+            return (
             <li key={idx} style={{border:'1px solid #e5e7eb',borderRadius:10,padding:12}}>
               <div style={{display:'flex',gap:8,alignItems:'center',justifyContent:'space-between'}}>
                 <div style={{display:'flex',gap:8,alignItems:'center'}}>
@@ -421,7 +553,7 @@ function MyScreen({ userId, catalog, onPlanChanged, onFinishSession }:{ userId:s
                 <Img src={ex.machineImg||ex.freeAltImg} alt={ex.name}/>
                 <div>
                   <div style={{fontSize:13}}>Series: <b>{it.sets}x</b> · Repeticoes: <b>{it.reps}</b> · Descanso: <b>{it.rest}</b></div>
-                  {it.tips? <div style={{fontSize:12,color:'#64748b',marginTop:4}}>{it.tips}</div>:null}
+                  {(tips || it.tips)? <div style={{fontSize:12,color:'#64748b',marginTop:4}}>{tips || it.tips}</div>:null}
                   <div style={{marginTop:8}}>
                     <span style={{fontSize:12,color:'#64748b'}}>Cronometro (descanso sugerido): </span>
                     <Timer initialSec={restSec} />
@@ -474,7 +606,7 @@ function Gamification({ userId }:{ userId:string }){
 }
 
 // -------------------------------- Diagnostics -----------------------------
-function DiagnosticsPanel(){
+function DiagnosticsPanel({ supabaseStatus }:{ supabaseStatus:string }){
   const has10Avatars = AVATARS.length >= 10;
   const allImagesEquipment = LIB.every(e=> !!(e.machineImg || e.freeAltImg));
   const plan = buildPlan('hypertrophy', ['Peito','Triceps'], 3, LIB);
@@ -487,6 +619,7 @@ function DiagnosticsPanel(){
     <details style={{border:'1px dashed #cbd5e1',borderRadius:12,padding:12,marginTop:16}}>
       <summary style={{cursor:'pointer',fontWeight:600}}>Diagnostico</summary>
       <ul style={{marginTop:8,fontSize:13}}>
+        <li>Supabase Benfit: <b>{supabaseStatus}</b></li>
         <li>Avatares {'>'}= 10: <b>{String(has10Avatars)}</b></li>
         <li>Biblioteca com imagens de aparelhos/pesos: <b>{String(allImagesEquipment)}</b></li>
         <li>Sessoes geradas (3–4): <b>{String(sessionsOk)}</b></li>
