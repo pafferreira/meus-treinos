@@ -45,17 +45,17 @@ const MUSCLES = ["Peito","Costas","Ombros","Biceps","Triceps","Quadriceps","Post
 // Avatar fixo do Benfit e 10 avatares para usuários
 const BENFIT_AVATAR_URL = "https://images.unsplash.com/photo-1556157382-97eda2dfd30b?q=80&w=512&auto=format&fit=crop";
 const AVATARS: { id: string; url: string; label: string }[] = [
-  { id: "a1", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Luna", label: "Luna" },
-  { id: "a2", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Joca", label: "Joca" },
-  { id: "a3", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Bento", label: "Bento" },
-  { id: "a4", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Mel", label: "Mel" },
-  { id: "a5", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Zig", label: "Zig" },
-  { id: "a6", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Dona", label: "Dona" },
-  { id: "a7", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Kiko", label: "Kiko" },
-  { id: "a8", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Pipoca", label: "Pipoca" },
-  { id: "a9", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Bia", label: "Bia" },
-  { id: "a10", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Gui", label: "Gui" },
-  { id: "a11", url: "https://api.dicebear.com/7.x/croodles/png?size=256&seed=Tuca", label: "Tuca" },
+  { id: "a1", url: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=400&auto=format&fit=crop", label: "Luna" },
+  { id: "a2", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop", label: "Joca" },
+  { id: "a3", url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop", label: "Bento" },
+  { id: "a4", url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop", label: "Mel" },
+  { id: "a5", url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400&auto=format&fit=crop", label: "Zig" },
+  { id: "a6", url: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=400&auto=format&fit=crop", label: "Dona" },
+  { id: "a7", url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop", label: "Kiko" },
+  { id: "a8", url: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?q=80&w=400&auto=format&fit=crop", label: "Pipoca" },
+  { id: "a9", url: "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=400&auto=format&fit=crop", label: "Bia" },
+  { id: "a10", url: "https://images.unsplash.com/photo-1546967191-fdfb13ed6b1e?q=80&w=400&auto=format&fit=crop", label: "Gui" },
+  { id: "a11", url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop", label: "Tuca" },
 ];
 
 // Exercícios base (somente equipamentos/pesos nas imagens)
